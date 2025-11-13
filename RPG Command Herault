@@ -1,0 +1,29 @@
+library(happign)
+library(dplyr)
+library(RADIS)
+library(ggplot2)
+
+bbox_L93 <- sf::st_bbox(
++   c(
++        xmin = 676121,
++        xmax = 809573,
++        ymin = 6241941,
++        ymax = 6335868
++        ),
++       crs = sf::st_crs(2154) # RGF93 / Lambert-93
++        )
+
+> rect <- sf::st_as_sfc(bbox_L93)
+>  sf_herault <- happign::get_wfs(
++     x = rect,
++     layer = "LIMITES_ADMINISTRATIVES_EXPRESS.LATEST:commune"
++     )
+
+library(tmap)
+tm_basemap("OpenStreetMap.France") +
++         tm_shape(sf_herault) +
++        tm_borders(col = "black", lwd = 1)
+
+> plot(sf_herault)
+
+rpg <- get_rpg_data(sf_herault, year = 2020, id = "id")
