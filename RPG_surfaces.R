@@ -22,7 +22,9 @@ sf_herault <- happign::get_wfs(
   layer = "LIMITES_ADMINISTRATIVES_EXPRESS.LATEST:commune"
 )
 
-my_commune <- sf_herault %>% dplyr::filter(code_insee == "11012")
+write.csv(sf_herault, "admin_herault.csv", row.names = FALSE)
+
+my_commune <- sf_herault %>% dplyr::filter(code_insee == "11012" | code_insee == "11022" | code_insee == "11233"| code_insee == "11041"| code_insee == "11106"| code_insee == "11116"| code_insee == "11172"| code_insee == "11164")
 
 # Years to process
 years <- 2018:2022   # change selon tes besoins
@@ -68,7 +70,7 @@ processing_ayear <- function(ayear) {
 }
 
 # Loop to process all the years we consider
-df_total <- map_df(years, treatment_ayear)
+df_total <- map_df(years, processing_ayear)
 write.csv(df_total, "proportions_surfaces_crops_tot.csv", row.names = FALSE)
 
 # Filter to remove the rows of crop with a null surface (to simplify the legends)
