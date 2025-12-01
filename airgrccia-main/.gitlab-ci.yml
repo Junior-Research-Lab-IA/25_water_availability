@@ -1,0 +1,42 @@
+stages:
+  - checks
+  - deploy
+
+default:
+  tags: [GEAU]
+
+image: rocker/geospatial:latest
+
+variables:
+  CACHE_CI: "$CI_PROJECT_DIR/ci"
+  R_LIBS_USER: "$CACHE_CI/lib"
+  CACHE_DIR_AIRGRCCIA: "$CACHE_CI/airGRccia_cache"
+
+cache:
+  paths:
+    - $CACHE_CI
+
+before_script:
+  - mkdir -p $R_LIBS_USER
+  - echo "R_LIBS='$R_LIBS_USER'" > .Renviron
+  - R -q -e 'if (!require(devtools)) install.packages(c("devtools"))'
+  - R -q -e 'devtools::install(dependencies = TRUE)'
+
+check:
+  variables:
+    NOT_CRAN: "true"
+  stage: checks
+  script:
+    # Run devtools::check with vignettes = TRUE on any branch except the default one
+    - R -q -e "devtools::check(vignettes = Sys.getenv('CI_COMMIT_REF_NAME') != Sys.getenv('CI_DEFAULT_BRANCH'), error_on='error')"
+
+pages:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  script:
+    - R -q -e 'devtools::build_readme()'
+    - R -q -e 'pkgdown::build_site()'
+  artifacts:
+    paths:
+      - public
