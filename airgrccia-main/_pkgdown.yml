@@ -1,0 +1,33 @@
+url: https://airgriwrm.pages.mia.inra.fr/airgrccia
+destination: public
+template:
+  bootstrap: 5
+navbar:
+  structure:
+    left:  [intro, reference, articles, news, galaxy]
+    right: [gitlab]
+  components:
+    galaxy:
+      text: airGR Galaxy
+      menu:
+      - text: airGR R-package
+        href: https://hydrogr.github.io/airGR/
+      - text: airGRiwrm R-package
+        href: https://airgriwrm.g-eau.fr
+      - text: airGRteaching R-package
+        href: https://hydroGR.github.io/airGRteaching/
+      - text: airGRteaching web app
+        href: https://sunshine.irstea.fr/app/airGRteaching
+      - text: airGRmaps web app
+        href: https://sunshine.irstea.fr/app/airGRmaps
+      - text: airGRdatassim R-package
+        href: https://CRAN.R-project.org/package=airGRdatassim
+    gitlab:
+      icon: fab fa-gitlab fa-lg
+      href: https://forge.inrae.fr/airgriwrm/airgrccia
+
+repo:
+  url:
+    home: https://forge.inrae.fr/airgriwrm/airgrccia/
+    source: https://forge.inrae.fr/airgriwrm/airgrccia/-/tree/main
+    issue: https://forge.inrae.fr/airgriwrm/airgrccia/-/issues

@@ -1,0 +1,65 @@
+---
+title: "V04 - Dam releases preprocessing"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{V04 - Dam releases preprocessing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(airGRccia)
+```
+
+## Bibliography
+
+The URL https://www.barrages-cfbr.eu/IMG/pdf/monobar_salagou.pdf provides
+information about the dam's construction.
+Notably its total capacity of 102.2 hm<sup>3</sup>
+
+From the url https://odee.herault.fr/index.php/thematiques/eaux-de-surface, one
+has access to the time series of the water height of the Salagou Lake since
+its construction.
+
+The Plan de Gestion de la Ressource en Eau (PGRE), available at the URL
+https://www.rhone-mediterranee.eaufrance.fr/sites/sierm/files/content/2019-11/20180914_PGRE_Herault_VF.pdf,
+we can read:
+
+> Le mode de gestion actuel consiste en des lâchers en continu à 500 l/s maximum à destination
+> de la turbine de production d’hydroélectricité. Ces lâchers peuvent être interrompus en période
+> de sècheresse hivernale ou printanière de façon à réduire la baisse du niveau du plan d’eau et
+> pouvoir, en période estivale, assurer d’une part les lâchers (parfois au-dessus de 500 l/s)
+> permettant de soutenir le débit de l’Hérault et d’autre part favoriser l’atteinte d’un niveau du plan
+> d’eau compatible avec les usages touristiques autour du plan d’eau. La turbine subit cependant
+> de fréquents arrêts en été en raison d’un échauffement excessif. Ainsi, sur les 30 dernières
+> années, le débit moyen lâché entre juin et septembre est de l’ordre de 340 l/s.
+
+We can use this assumption as release flow time series to use in the model.
+
+```{r}
+BasinsObs <- readRDS(getCachePath("V02", "BasinsObs_safran_historical", "RDS"))
+DatesR <- BasinsObs$DatesR
+```
+
+```{r}
+Qrelease <- data.frame(DatesR = DatesR,
+                       month = lubridate::month(DatesR),
+                       DAM = 0.5)
+Qrelease$DAM[Qrelease$month %in% 6:9] <- 0.340
+summary(Qrelease)
+```
+
+
+```{r}
+Qrelease$month <- NULL
+file_Qrelease <- getCachePath("V04", "Qrelease_historical", "xlsx")
+if (!file.exists(file_Qrelease)) openxlsx2::write_xlsx(Qrelease, file_Qrelease)
+```
+

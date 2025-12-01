@@ -1,0 +1,63 @@
+Package: airGRccia
+Title: Climate Change Impact and Adaptation with airGRiwrm
+Version: 0.1.0.9000
+Authors@R: c(
+    person("David", "Dorchies", , "david.dorchies@inrae.fr",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-6595-7984"))
+  )
+Description: This package provides tools for studying climate Change
+  Impact and Adaptation on a watershed modeled with airGRiwrm.
+URL: https://umr-g-eau.pages.mia.inra.fr/airgrccia, https://forgemia.inra.fr/umr-g-eau/airgrccia
+BugReports: https://forgemia.inra.fr/umr-g-eau/airgrccia/-/issues
+License: AGPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    airGRiwrm
+Suggests:
+    happign,
+    knitr,
+    lubridate,
+    mapview,
+    openxlsx2,
+    pkgload,
+    rmarkdown,
+    rprojroot,
+    scales,
+    testthat (>= 3.0.0),
+    tidyr,
+    tidyverse,
+    tmap,
+    TSstudio
+VignetteBuilder: knitr
+Imports:
+    cli,
+    config,
+    dplyr,
+    future,
+    future.apply,
+    ggplot2,
+    httr,
+    hubeau,
+    logger,
+    methods,
+    parallelly,
+    pryr,
+    purrr,
+    RADIS,
+    readr,
+    rvest,
+    sf,
+    stars,
+    stats,
+    stringr,
+    terra,
+    units,
+    urltools,
+    utils,
+    whitebox,
+    xfun
+Config/testthat/edition: 3
+Remotes: RADIS=url::https://forge.inrae.fr/umr-g-eau/radis/-/archive/dev/radis-dev.tar.gz
