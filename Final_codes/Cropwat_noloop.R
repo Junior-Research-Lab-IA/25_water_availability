@@ -30,4 +30,15 @@ library(CropWat)
                                               ETo    = meteo$ETo,
                                               P      = meteo$P,
                                               soil_depth = soil$w_depth,   # 30cm soil depth
-                                              AWC        = soil$awc  )  
+                                              AWC        = soil$awc  ) 
+
+#irrigation time from 15/03 to 16/10
+irrig_date<-c()
+for (year in 2023:2075) {
+  start_date <- as.Date(paste(year, "03", "15", sep = "-"))
+  end_date <- as.Date(paste(year, "10", "16", sep = "-"))
+  date_sequence =c(seq.Date(from = start_date, to = end_date, by = "day"))
+  irrig_date <- c(as.Date(irrig_date), date_sequence)
+}
+
+
