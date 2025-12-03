@@ -2,7 +2,7 @@ library(RADIS)
 library(sf)
 
 # Read your shapefile 
-> communes_sf <- st_read("zoneA.shp")    #change the letter according to the zone and check that you have the 4 shapefiles for thsis zone in the working directory
+> communes_sf <- st_read("zoneX.shp")    #replace X by the letter of the zone your want and check that your working directory is airgrccia-main
 
 # Retrieve soil depth
 soil_depth_zone <- get_soil_depth(
