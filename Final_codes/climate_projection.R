@@ -3,20 +3,20 @@ library(dplyr)
 library(RADIS)
 
 #open the shapefile
-basin <- st_read("path/to/your_shapefile.shp")   
+zone <- st_read("zoneX.shp")    #replace X by the letter of the zone your want and check that your working directory is airgrccia-main
 
-basin_27572 <- st_transform(basin, 27572)
+zone_27572 <- st_transform(zone, 27572)
 
-bbox_27572 <- st_bbox(basin_27572)
+bbox_27572 <- st_bbox(zone_27572)
 
 scenarios_all <- get_drias_scenario()
 
 #filter the desired RCP scenarios
-sc_rcp45 <- scenarios_all %>% 
-  filter(RCP == "rcp45")
+sc_rcp <- scenarios_all %>% 
+  filter(RCP == "rcpXX")    #replace XX by the number of the rcp you want (cf. organisation sheet)
 
 #Group the scenarios chain
-mods <- sc_rcp45 %>%
+mods <- sc_rcp %>%
   group_by(GCM, RCM, BC, RCP) %>%
   summarise(vars = list(variable), .groups = "drop")
 
@@ -68,4 +68,4 @@ clim_daily <- clim_df %>%
   )
 
 #save the data in csv
-write.csv(clim_daily, "namefromsheet.csv", row.names = FALSE)
+write.csv(clim_daily, "namefromsheet.csv", row.names = FALSE)    #put the name of the output file written in the oragnisation sheet
