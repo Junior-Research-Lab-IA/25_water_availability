@@ -2,10 +2,9 @@ library(dplyr)
 library(readr)
 library(CropWat)
 
-#make sure you downloaded the soil data (Zone A, B and C) and climate scenario file into airGCCIA working directory
+#make sure you downloaded the soil data (already in air-grccia) and the right climate data file into airGCCIA working directory
 
-# replace X by the file of climate scenario
-climate <- read_csv("X.csv") %>%
+climate <- read_csv("X.csv") %>%    # replace X by the name of the climate data file
   rename(
     Date = time,
     ETo  = evapo,
@@ -19,7 +18,7 @@ meteo <- climate
 soil_params <- read.csv("Soil data (Zone A, B and C).csv")
 
 # replace X by target zone
-target_zone <- "zoneX"   # <- change to zoneB or zoneC later
+target_zone <- "zoneX"    # replace X by the letter of the zone wanted
 
 soil <- soil_params %>% 
   filter(zone == target_zone)
@@ -50,7 +49,7 @@ X0_initial_state <- CW_create_state(cw_input = cw_input)
 
   
   # irrigation management strategy
-  irrig_1pc_RAW <- CW_irrig_fun_factory(RAW_ratio = 1, apply_Dr = TRUE) #plant is never stressed
+  irrig_1pc_RAW <- CW_irrig_fun_factory(RAW_ratio = 1, apply_Dr = TRUE)    #plant is never stressed
   
   # Simulate the water balance with the chosen irrigation management
   cw_output <- CW_run_simulation(X0_initial_state,cw_input,
