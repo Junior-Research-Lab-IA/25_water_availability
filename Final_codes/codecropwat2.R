@@ -27,9 +27,9 @@ soil <- soil %>%
 ## =========================
 
 cropcode <- c(
-  "Vineyards" = "SB2023-vignes",
-  "orchads" = "SB2023-vergers",
-  "vegetables"= "FAO-VEGETABL"
+  "vineyard" = "SB2023-vignes",
+  "orchad" = "SB2023-vergers",
+  "vegetable"= "FAO-VEGETABL"
 )
 # Sowing date for vegetables (adapt if needed)
 sowing_date_tbl <- data.frame(
