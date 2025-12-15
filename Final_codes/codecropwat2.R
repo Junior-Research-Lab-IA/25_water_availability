@@ -12,10 +12,6 @@ soil <- read_delim(
   col_types = cols()  # let readr guess types
 )
 
-soil
-names(soil)
-# "Zone" "soil_depth_max" "soil_depth_min" "soil_depth"
-# "soil_awc_max" "soil_awc_min" "soil_awc"
 soil <- soil %>%
   mutate(
     soil_depth = as.numeric(soil_depth),  # already in meters
@@ -23,28 +19,26 @@ soil <- soil %>%
   )
 
 ## =========================
-## 2. CROP CHOICE: VEGETABLES,vineyards, orchards
+## 2. CROP CHOICE: VEGETABLES, VINEYARDS, ORCHARDS
 ## =========================
 
 cropcode <- c(
-  "vineyard" = "SB2023-vignes",
-  "orchad" = "SB2023-vergers",
-  "vegetable"= "FAO-VEGETABL"
-)
-# Sowing date for vegetables (adapt if needed)
-sowing_date_tbl <- data.frame(
-  Crop = c("FAO-VEGETABL"),
-  Date = c("02-15")   # MM-DD
+  "Vineyards"  = "SB2023-vignes",
+  "orchads"    = "SB2023-vergers",
+  "vegetables" = "FAO-VEGETABL"
 )
 
-target_crops <- names(cropcode)  # "Vineyards", "Orchards", "Vegetables"
+# For vegetables: two sowing dates (spring + summer)
+veg_sowing_dates <- c("02-15",  # spring cycle (mid-Feb)
+                      "06-01")  # summer cycle (early June)
 
-# We will use: soil_depth (m) and AWC (mm) per zone
+target_crops <- names(cropcode)  # "Vineyards", "orchads", "vegetables"
 
 zones <- c("A", "B", "C")
 
-#function to read climate files
-
+## =========================
+## 3. READ CLIMATE
+## =========================
 read_climate <- function(file) {
   readr::read_csv(file, show_col_types = FALSE) %>%
     mutate(
@@ -53,12 +47,13 @@ read_climate <- function(file) {
       Ptot = pr       # Precipitation (mm/day)
     )
 }
+
 ## =========================
-## 3. IRRIGATION PERIOD
+## 4. IRRIGATION PERIOD
 ## =========================
 
-# irrigation dates 15/03 – 16/10 for 1951–2100
-irrig_date <- as.Date(character())  # empty Date vector
+# irrigation dates 15/03 – 16/10 for 2023–2075
+irrig_date <- as.Date(character())
 
 for (year in 2023:2075) {
   start_date <- as.Date(paste(year, "03", "15", sep = "-"))
@@ -66,15 +61,16 @@ for (year in 2023:2075) {
   irrig_date <- c(irrig_date, seq.Date(start_date, end_date, by = "day"))
 }
 
-# irrigation rule
 irrig_1pc_RAW <- CW_irrig_fun_factory(
-  RAW_ratio = 1,
-  apply_Dr  = TRUE,
+  RAW_ratio   = 1,
+  apply_Dr    = TRUE,
   dates_irrig = irrig_date
 )
+
 ## =========================
-## 4. LOOP OVER ZONES AND CLIMATE SCENARIOS
+## 5. LOOP OVER ZONES + CLIMATE SCENARIOS + CROPS
 ## =========================
+
 if (!dir.exists("Output")) dir.create("Output")
 all_results <- list()
 
@@ -85,9 +81,9 @@ for (z in zones) {
   depth_z <- soil_z$soil_depth
   AWC_z   <- soil_z$AWC
 
-  # 5.2 climate file for this zone (adjust pattern to your filenames)
+  # 5.2 all climate files for this zone
   clim_files <- list.files(
-    path = "climate_files",
+    path   = "climate_files",
     pattern = paste0("climate_zone", z, ".*\\.csv$"),
     full.names = TRUE
   )
@@ -97,10 +93,9 @@ for (z in zones) {
     next
   }
 
-  # If you have several scenarios per zone, loop over them:
   for (clim_file in clim_files) {
 
-    # Extract climate scenario name from file name
+    # Scenario name from file name (without extension)
     scenario_name <- tools::file_path_sans_ext(basename(clim_file))
 
     climate <- read_climate(clim_file)
@@ -110,21 +105,67 @@ for (z in zones) {
 
       crop_id <- cropcode[[crop_label]]
 
-      ## Create CropWat input
-      if (grepl("FAO", crop_id)) {
+      ## ===========
+      ## CASE 1: VEGETABLES (two sowing dates)
+      ## ===========
+      if (crop_id == "FAO-VEGETABL") {
 
-        sow_date <- sowing_date_tbl$Date[sowing_date_tbl$Crop == crop_id]
+        veg_runs <- list()
 
-        cw_input <- CW_create_input(
-          crop        = crop_id,
-          DatesR      = climate$Date,
-          ETo         = climate$ETP,
-          P           = climate$Ptot,
-          soil_depth  = depth_z,
-          AWC         = AWC_z,
-          sowing_date = sow_date
-        )
+        for (sd in veg_sowing_dates) {
 
+          cw_input <- CW_create_input(
+            crop        = crop_id,
+            DatesR      = climate$Date,
+            ETo         = climate$ETP,
+            P           = climate$Ptot,
+            soil_depth  = depth_z,
+            AWC         = AWC_z,
+            sowing_date = sd      # different sowing date each loop
+          )
+
+          X0_initial_state <- CW_create_state(cw_input = cw_input)
+
+          cw_output <- CW_run_simulation(
+            X0_initial_state,
+            cw_input,
+            FUN_IRRIG = irrig_1pc_RAW
+          )
+
+          wd_one <- cw_output %>%
+            mutate(
+              year  = format(DatesR, "%Y"),
+              month = format(DatesR, "%m")
+            ) %>%
+            group_by(year) %>%
+            summarise(
+              total_irrigation  = sum(Ir),
+              spring_irrigation = sum(Ir[month %in% c("03","04","05")]),
+              summer_irrigation = sum(Ir[month %in% c("06","07","08","09")]),
+              .groups = "drop"
+            )
+
+          veg_runs[[length(veg_runs) + 1]] <- wd_one
+        }
+
+        # Combine the two vegetable cycles in ONE table per year
+        water_demand <- bind_rows(veg_runs) %>%
+          group_by(year) %>%
+          summarise(
+            total_irrigation  = sum(total_irrigation),
+            spring_irrigation = sum(spring_irrigation),
+            summer_irrigation = sum(summer_irrigation),
+            .groups = "drop"
+          ) %>%
+          mutate(
+            Zone     = z,
+            Crop     = crop_label,
+            Scenario = scenario_name
+          )
+
+        ## ===========
+        ## CASE 2: OTHER CROPS (vines, orchards) – one cycle
+        ## ===========
       } else {
 
         cw_input <- CW_create_input(
@@ -135,38 +176,41 @@ for (z in zones) {
           soil_depth = depth_z,
           AWC        = AWC_z
         )
-      }
 
-      X0_initial_state <- CW_create_state(cw_input = cw_input)
+        X0_initial_state <- CW_create_state(cw_input = cw_input)
 
-      cw_output <- CW_run_simulation(
-        X0_initial_state,
-        cw_input,
-        FUN_IRRIG = irrig_1pc_RAW
-      )
-
-      # Aggregate irrigation demand
-      water_demand <- cw_output %>%
-        mutate(
-          year  = format(DatesR, "%Y"),
-          month = format(DatesR, "%m")
-        ) %>%
-        group_by(year) %>%
-        summarise(
-          total_irrigation  = sum(Ir),
-          spring_irrigation = sum(Ir[month %in% c("03","04","05")]),
-          summer_irrigation = sum(Ir[month %in% c("06","07","08","09")]),
-          .groups = "drop"
-        ) %>%
-        mutate(
-          Zone     = z,
-          Crop     = crop_label,
-          Scenario = scenario_name
+        cw_output <- CW_run_simulation(
+          X0_initial_state,
+          cw_input,
+          FUN_IRRIG = irrig_1pc_RAW
         )
 
-      # Filename that includes scenario + zone + crop
+        water_demand <- cw_output %>%
+          mutate(
+            year  = format(DatesR, "%Y"),
+            month = format(DatesR, "%m")
+          ) %>%
+          group_by(year) %>%
+          summarise(
+            total_irrigation  = sum(Ir),
+            spring_irrigation = sum(Ir[month %in% c("03","04","05")]),
+            summer_irrigation = sum(Ir[month %in% c("06","07","08","09")]),
+            .groups = "drop"
+          ) %>%
+          mutate(
+            Zone     = z,
+            Crop     = crop_label,
+            Scenario = scenario_name
+          )
+      }
+
+      ## ===========
+      ## 6. SAVE OUTPUT (filenames start with "irrig_")
+      ## ===========
+
       out_file <- paste0(
         "Output/",
+        "irrig_",
         scenario_name,
         "_zone", z,
         "_", crop_label,
@@ -180,8 +224,11 @@ for (z in zones) {
   }   # end climate scenario loop
 }     # end zone loop
 
-# Combined output
+## =========================
+## 7. GLOBAL COMBINED TABLE
+## =========================
 if (length(all_results) > 0) {
   final_all_zones <- bind_rows(all_results)
-  write.csv(final_all_zones, "Output/water_demand_all_zones.csv", row.names = FALSE)
+  write.csv(final_all_zones, "Output/irrig_water_demand_all_zones.csv", row.names = FALSE)
 }
+
