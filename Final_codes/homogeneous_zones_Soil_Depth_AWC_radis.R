@@ -140,13 +140,4 @@ tm_basemap("OpenStreetMap.France") +
   tm_polygons("zone_id", alpha = 0.6) +
   tm_borders()
 
-climate_basincommunes <- soil_depth_basincommunes %>% 
-  mutate(
-    depth_class = cut(
-      soil_depth,
-      breaks = c(0.2, 0.6, 1, 1.4),
-      labels = c("shallow","medium", "deep"),
-      include.lowest = TRUE
-    )
-  ) %>% 
-  select(depth_class, geometry)
+
